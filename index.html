@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show do Milhão / Quem Quer Ser Um Milionário</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1b1145 0%, #08041a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(20, 15, 45, 0.85);
+            border: 2px solid #4a38a6;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(114, 9, 183, 0.4);
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* TELA DE CONFIGURAÇÃO / INÍCIO */
+        .setup-screen, .game-over-screen {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 2px solid #4a38a6;
+            background: #0d0726;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #ffd700;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #000;
+            font-weight: 800;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .btn:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* TELA DO JOGO */
+        .game-screen {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-game {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0d0726;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid #322380;
+        }
+
+        .prize-box {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #00ffcc;
+        }
+
+        .timer-box {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ff3366;
+            background: rgba(255, 51, 102, 0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #ff3366;
+        }
+
+        .lifelines {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-lifeline {
+            background: #251666;
+            border: 1px solid #5a43cf;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .btn-lifeline:hover:not(:disabled) {
+            background: #3c26a6;
+            border-color: #ffd700;
+        }
+
+        /* ESTRUTURA DA PERGUNTA */
+        .question-box {
+            background: linear-gradient(135deg, #180e42 0%, #0b0526 100%);
+            border: 2px solid #ffd700;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+
+        /* OPÇÕES DE RESPOSTA */
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .answers-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-game {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        .btn-answer {
+            background: #120a36;
+            border: 2px solid #3c26a6;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-answer:hover:not(:disabled) {
+            background: #231363;
+            border-color: #ffd700;
+            transform: translateY(-2px);
+        }
+
+        .btn-answer .prefix {
+            color: #ffd700;
+            font-weight: 800;
+        }
+
+        /* ESTADOS DE RESPOSTA */
+        .btn-answer.correct {
+            background: #008037 !important;
+            border-color: #00ff68 !important;
+            color: #fff;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .btn-answer.wrong {
+            background: #b30000 !important;
+            border-color: #ff3333 !important;
+            color: #fff;
+        }
+
+        .btn-answer.hidden {
+            visibility: hidden;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+
+        .loading {
+            font-size: 1.2rem;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- TELA INICIAL -->
+    <div id="setup-screen" class="setup-screen">
+        <h1>QUEM QUER SER UM MILIONÁRIO?</h1>
+        <p>Insira o ID da sua planilha do Google Sheets para carregar as perguntas:</p>
+        <input type="text" id="sheet-id" placeholder="1tvhiX8xjqUZoLGyZN3Uf-bTUPCRvHTY7Hzk-ZHn3avU" value="">
+        <button class="btn" onclick="iniciarJogo()">Começar Jogo</button>
+        <p id="error-msg" style="color: #ff3366; font-size: 0.9rem;"></p>
+    </div>
+
+    <!-- TELA DE JOGO -->
+    <div id="game-screen" class="game-screen">
+        <div class="header-game">
+            <div class="prize-box">Prêmio: <span id="current-prize">R$ 0</span></div>
+            <div class="timer-box">Tempo: <span id="timer">30</span>s</div>
+            <div class="lifelines">
+                <button class="btn-lifeline" id="btn-5050" onclick="usar5050()">Eliminar 2 (50:50)</button>
+            </div>
+        </div>
+
+        <div class="question-box" id="question-text">
+            Carregando pergunta...
+        </div>
+
+        <div class="answers-grid" id="answers-container">
+            <button class="btn-answer" onclick="selecionarResposta(0)"><span class="prefix">A:</span> <span class="text"></span></button>
+            <button class="btn-answer" onclick="selecionarResposta(1)"><span class="prefix">B:</span> <span class="text"></span></button>
+            <button class="btn-answer" onclick="selecionarResposta(2)"><span class="prefix">C:</span> <span class="text"></span></button>
+            <button class="btn-answer" onclick="selecionarResposta(3)"><span class="prefix">D:</span> <span class="text"></span></button>
+        </div>
+    </div>
+
+    <!-- TELA FINAL -->
+    <div id="game-over-screen" class="game-over-screen" style="display: none;">
+        <h1 id="game-over-title">FIM DE JOGO!</h1>
+        <p id="game-over-msg" style="font-size: 1.3rem;">Você ganhou:</p>
+        <h2 id="final-prize" style="color: #00ffcc; font-size: 2.5rem; margin: 10px 0;">R$ 0</h2>
+        <button class="btn" onclick="reiniciarJogo()">Jogar Novamente</button>
+    </div>
+</div>
+
+<script>
+    // Escala de Prêmios Estilo Milionário
+    const tabelaPremios = [
+        "R$ 1.000", "R$ 2.000", "R$ 3.000", "R$ 5.000", "R$ 10.000",
+        "R$ 20.000", "R$ 50.000", "R$ 100.000", "R$ 300.000", "R$ 500.000",
+        "R$ 1.000.000"
+    ];
+
+    let perguntas = [];
+    let perguntaAtualIndex = 0;
+    let indiceRespostaCorreta = -1;
+    let tempoRestante = 30;
+    let timerInterval = null;
+    let bloqueado = false;
+
+    // Converte CSV público do Google Sheets para Array de Objetos
+    async function carregarPerguntasPlanilha(sheetId) {
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Não foi possível acessar a planilha.");
+        
+        const text = await response.text();
+        const linhas = parseCSV(text);
+
+        if (linhas.length < 2) throw new Error("A planilha precisa ter um cabeçalho e pelo menos 1 pergunta.");
+
+        // Mapeia colunas baseado na linha 0 (cabeçalho)
+        const header = linhas[0].map(h => h.toLowerCase().trim());
+        const idxPergunta = header.indexOf('pergunta');
+        const idxCorreta = header.indexOf('correta');
+        const idxErrada1 = header.indexOf('errada1');
+        const idxErrada2 = header.indexOf('errada2');
+        const idxErrada3 = header.indexOf('errada3');
+
+        if (idxPergunta === -1 || idxCorreta === -1 || idxErrada1 === -1 || idxErrada2 === -1 || idxErrada3 === -1) {
+            throw new Error("Colunas obrigatórias não encontradas. Certifique-se de ter: pergunta, correta, errada1, errada2, errada3.");
+        }
+
+        const listaPerguntas = [];
+        for (let i = 1; i < linhas.length; i++) {
+            const row = linhas[i];
+            if (row[idxPergunta]) {
+                listaPerguntas.push({
+                    pergunta: row[idxPergunta],
+                    correta: row[idxCorreta],
+                    erradas: [row[idxErrada1], row[idxErrada2], row[idxErrada3]]
+                });
+            }
+        }
+
+        return listaPerguntas;
+    }
+
+    // Parser simples para CSV que lida com aspas e vírgulas internas
+    function parseCSV(text) {
+        let lines = [];
+        let row = [];
+        let entry = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+            let c = text[i];
+            let nextC = text[i+1];
+
+            if (c === '"') {
+                if (inQuotes && nextC === '"') { entry += '"'; i++; }
+                else { inQuotes = !inQuotes; }
+            } else if (c === ',' && !inQuotes) {
+                row.push(entry.trim());
+                entry = '';
+            } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                if (c === '\r' && nextC === '\n') { i++; }
+                row.push(entry.trim());
+                if (row.length > 0 && row.some(x => x !== '')) lines.push(row);
+                row = [];
+                entry = '';
+            } else {
+                entry += c;
+            }
+        }
+        if (entry || row.length > 0) {
+            row.push(entry.trim());
+            lines.push(row);
+        }
+        return lines;
+    }
+
+    async function iniciarJogo() {
+        const sheetId = document.getElementById('sheet-id').value.trim();
+        const errorMsg = document.getElementById('error-msg');
+        errorMsg.innerText = "";
+
+        if (!sheetId) {
+            errorMsg.innerText = "Por favor, insira o ID da planilha.";
+            return;
+        }
+
+        try {
+            errorMsg.innerText = "Carregando perguntas...";
+            perguntas = await carregarPerguntasPlanilha(sheetId);
+            
+            // Embaralha as perguntas carregadas
+            perguntas.sort(() => Math.random() - 0.5);
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            
+            perguntaAtualIndex = 0;
+            document.getElementById('btn-5050').disabled = false;
+            exibirPergunta();
+        } catch (err) {
+            errorMsg.innerText = err.message || "Erro ao carregar dados. Verifique a URL e as permissões da planilha.";
+        }
+    }
+
+    function exibirPergunta() {
+        bloqueado = false;
+        resetarBotoes();
+
+        if (perguntaAtualIndex >= perguntas.length || perguntaAtualIndex >= tabelaPremios.length) {
+            finalizarJogo(true);
+            return;
+        }
+
+        const q = perguntas[perguntaAtualIndex];
+        document.getElementById('question-text').innerText = q.pergunta;
+
+        // Atualiza Prêmio Atual na interface
+        const premioAtual = tabelaPremios[perguntaAtualIndex];
+        document.getElementById('current-prize').innerText = premioAtual;
+
+        // Mistura as respostas (1 correta e 3 erradas)
+        const todasOpcoes = [
+            { texto: q.correta, eCorreta: true },
+            { texto: q.erradas[0], eCorreta: false },
+            { texto: q.erradas[1], eCorreta: false },
+            { texto: q.erradas[2], eCorreta: false }
+        ];
+
+        todasOpcoes.sort(() => Math.random() - 0.5);
+
+        const btns = document.querySelectorAll('.btn-answer');
+        btns.forEach((btn, idx) => {
+            btn.querySelector('.text').innerText = todasOpcoes[idx].texto;
+            btn.dataset.correta = todasOpcoes[idx].eCorreta;
+            if (todasOpcoes[idx].eCorreta) {
+                indiceRespostaCorreta = idx;
+            }
+        });
+
+        iniciarTimer();
+    }
+
+    function iniciarTimer() {
+        clearInterval(timerInterval);
+        tempoRestante = 30;
+        document.getElementById('timer').innerText = tempoRestante;
+
+        timerInterval = setInterval(() => {
+            tempoRestante--;
+            document.getElementById('timer').innerText = tempoRestante;
+            if (tempoRestante <= 0) {
+                clearInterval(timerInterval);
+                finalizarJogo(false, "O tempo acabou!");
+            }
+        }, 1000);
+    }
+
+    function selecionarResposta(index) {
+        if (bloqueado) return;
+        bloqueado = true;
+        clearInterval(timerInterval);
+
+        const btns = document.querySelectorAll('.btn-answer');
+        const btnSelecionado = btns[index];
+        const eCorreta = btnSelecionado.dataset.correta === "true";
+
+        if (eCorreta) {
+            btnSelecionado.classList.add('correct');
+            setTimeout(() => {
+                perguntaAtualIndex++;
+                exibirPergunta();
+            }, 1500);
+        } else {
+            btnSelecionado.classList.add('wrong');
+            btns[indiceRespostaCorreta].classList.add('correct');
+            setTimeout(() => {
+                finalizarJogo(false, "Resposta Incorreta!");
+            }, 2000);
+        }
+    }
+
+    function usar5050() {
+        if (bloqueado) return;
+        const btns = document.querySelectorAll('.btn-answer');
+        let eliminados = 0;
+
+        btns.forEach((btn, idx) => {
+            if (idx !== indiceRespostaCorreta && eliminados < 2 && !btn.classList.contains('hidden')) {
+                btn.classList.add('hidden');
+                eliminados++;
+            }
+        });
+
+        document.getElementById('btn-5050').disabled = true;
+    }
+
+    function resetarBotoes() {
+        const btns = document.querySelectorAll('.btn-answer');
+        btns.forEach(btn => {
+            btn.className = 'btn-answer';
+        });
+    }
+
+    function finalizarJogo(vitoria, mensagem = "") {
+        clearInterval(timerInterval);
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('game-over-screen').style.display = 'flex';
+
+        const titulo = document.getElementById('game-over-title');
+        const msg = document.getElementById('game-over-msg');
+        const premioFinal = document.getElementById('final-prize');
+
+        if (vitoria) {
+            titulo.innerText = "PARABÉNS! VOCÊ É UM MILIONÁRIO!";
+            msg.innerText = "Você acertou todas as perguntas e ganhou:";
+            premioFinal.innerText = "R$ 1.000.000";
+        } else {
+            titulo.innerText = "FIM DE JOGO!";
+            msg.innerText = mensagem;
+            const premioGanho = perguntaAtualIndex > 0 ? tabelaPremios[perguntaAtualIndex - 1] : "R$ 0";
+            premioFinal.innerText = premioGanho;
+        }
+    }
+
+    function reiniciarJogo() {
+        document.getElementById('game-over-screen').style.display = 'none';
+        document.getElementById('setup-screen').style.display = 'flex';
+    }
+</script>
+
+</body>
+</html>
