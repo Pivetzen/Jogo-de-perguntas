@@ -128,14 +128,17 @@
             background: #251666;
             border: 1px solid #5a43cf;
             color: #fff;
-            padding: 8px 15px;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             transition: 0.2s;
             font-weight: 600;
             position: relative;
             overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-lifeline:hover:not(:disabled) {
@@ -145,9 +148,9 @@
 
         /* ESTILO BOTÃO DE AJUDA USADO (CORTADO COM X) */
         .btn-lifeline:disabled {
-            background: #120a2e;
-            border-color: #332255;
-            color: #666;
+            background: #120a2e !important;
+            border-color: #332255 !important;
+            color: #666 !important;
             cursor: not-allowed;
             text-decoration: line-through;
             opacity: 0.6;
@@ -298,8 +301,8 @@
             margin-top: 10px;
         }
 
-        /* MODAL DAS CARTAS UNO */
-        .modal-cards {
+        /* POPUP MENU DE AJUDAS */
+        .modal-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(8, 4, 26, 0.95);
@@ -313,12 +316,21 @@
             padding: 20px;
         }
 
-        .modal-cards h2 {
+        .modal-overlay h2 {
             color: #ffd700;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             text-align: center;
         }
 
+        .help-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        /* MODAL DAS CARTAS UNO */
         .cards-grid {
             display: flex;
             gap: 15px;
@@ -364,8 +376,19 @@
 <body>
 
 <div class="container">
+
+    <!-- POPUP MENU DE AJUDAS -->
+    <div id="help-menu-modal" class="modal-overlay">
+        <h2>Escolha uma ajuda:</h2>
+        <div class="help-options">
+            <button class="btn-lifeline" id="btn-cards" style="padding: 15px; font-size: 1.1rem;" onclick="abrirModalCartas()">Eliminar erradas</button>
+            <button class="btn-lifeline" id="btn-skip" style="padding: 15px; font-size: 1.1rem;" onclick="usarPular()">Pular pergunta</button>
+        </div>
+        <button class="btn btn-stop" style="margin-top: 10px; padding: 10px 25px; font-size: 0.9rem;" onclick="fecharModalAjudas()">Fechar</button>
+    </div>
+
     <!-- MODAL CARTAS DE UNO -->
-    <div id="cards-modal" class="modal-cards">
+    <div id="cards-modal" class="modal-overlay">
         <h2>Escolha uma carta para eliminar respostas erradas:</h2>
         <div class="cards-grid" id="cards-container">
             <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
@@ -389,8 +412,7 @@
         <div class="header-game">
             <div class="timer-box">Tempo: <span id="timer">30</span>s</div>
             <div class="lifelines">
-                <button class="btn-lifeline" id="btn-cards" onclick="abrirModalCartas()">Eliminar erradas</button>
-                <button class="btn-lifeline" id="btn-skip" onclick="usarPular()">Pular pergunta</button>
+                <button class="btn-lifeline" id="btn-main-help" onclick="abrirModalAjudas()">Pedir Ajuda</button>
             </div>
             <button class="btn btn-stop" style="padding: 8px 18px; font-size: 0.9rem;" onclick="pararJogo()">PARAR</button>
         </div>
@@ -433,10 +455,10 @@
 </div>
 
 <script>
-    // ID da sua planilha já pré-definido
+    // ID da sua planilha pública pré-definido
     const SHEET_ID = '1tvhiX8xjqUZoLGyZN3Uf-bTUPCRvHTY7Hzk-ZHn3avU';
 
-    // Escala de Prêmios Numéricos (para cálculos de porcentagem)
+    // Escala de Prêmios Numéricos (níveis do jogo)
     const premiosValores = [
         1000, 2000, 3000, 5000, 10000,
         20000, 50000, 100000, 300000, 500000,
@@ -444,7 +466,7 @@
     ];
 
     let perguntas = [];
-    let perguntaAtualIndex = 0;
+    let nivelAtual = 0; // Controla qual nível do prêmio o jogador está disputando
     let indiceRespostaCorreta = -1;
     let tempoRestante = 30;
     let timerInterval = null;
@@ -562,13 +584,14 @@
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'flex';
         
-        perguntaAtualIndex = 0;
+        nivelAtual = 0;
         valorAcumuladoAtual = 0;
         ajudaCartasUsada = false;
         ajudaPularUsada = false;
 
         document.getElementById('btn-cards').disabled = false;
         document.getElementById('btn-skip').disabled = false;
+        document.getElementById('btn-main-help').disabled = false;
 
         exibirPergunta();
     }
@@ -577,13 +600,18 @@
         bloqueado = false;
         resetarBotoes();
 
-        if (perguntaAtualIndex >= perguntas.length || perguntaAtualIndex >= premiosValores.length) {
+        if (nivelAtual >= premiosValores.length) {
             finalizarJogo(true);
             return;
         }
 
+        if (perguntas.length === 0) {
+            finalizarJogo(false, "Sem mais perguntas no banco de dados!");
+            return;
+        }
+
         // Atualizar Dashboard de Prêmios
-        const valorAcertar = premiosValores[perguntaAtualIndex];
+        const valorAcertar = premiosValores[nivelAtual];
         const valorParar = valorAcumuladoAtual * 0.5; // Perde 50%
         const valorErrar = valorAcumuladoAtual * 0.2; // Perde 80% (fica com 20%)
 
@@ -591,7 +619,8 @@
         document.getElementById('val-parar').innerText = formatarMoeda(valorParar);
         document.getElementById('val-errar').innerText = formatarMoeda(valorErrar);
 
-        const q = perguntas[perguntaAtualIndex];
+        // Pega a primeira pergunta do deck e remove para não repetir
+        const q = perguntas.shift();
         document.getElementById('question-text').innerText = q.pergunta;
 
         const todasOpcoes = [
@@ -641,9 +670,9 @@
 
         if (eCorreta) {
             btnSelecionado.classList.add('correct');
-            valorAcumuladoAtual = premiosValores[perguntaAtualIndex];
+            valorAcumuladoAtual = premiosValores[nivelAtual];
             setTimeout(() => {
-                perguntaAtualIndex++;
+                nivelAtual++; // Avança de nível apenas quando acerta
                 exibirPergunta();
             }, 1500);
         } else {
@@ -655,11 +684,28 @@
         }
     }
 
+    /* --- LÓGICA DO POPUP DE AJUDAS --- */
+    function abrirModalAjudas() {
+        if (bloqueado) return;
+        document.getElementById('help-menu-modal').style.display = 'flex';
+    }
+
+    function fecharModalAjudas() {
+        document.getElementById('help-menu-modal').style.display = 'none';
+    }
+
+    function verificarAjudasEsgotadas() {
+        if (ajudaCartasUsada && ajudaPularUsada) {
+            document.getElementById('btn-main-help').disabled = true;
+        }
+    }
+
     /* --- LÓGICA DA AJUDA: ELIMINAR ERRADAS --- */
     function abrirModalCartas() {
-        if (bloqueado || ajudaCartasUsada) return;
+        if (ajudaCartasUsada) return;
         
-        // Resetar modal de cartas
+        fecharModalAjudas();
+
         const container = document.getElementById('cards-container');
         container.innerHTML = `
             <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
@@ -674,11 +720,9 @@
     function virarCarta(elemento) {
         if (elemento.classList.contains('revealed')) return;
 
-        // Sorteia número de 0 a 3
         const numerosDisponiveis = [0, 1, 2, 3];
         const numeroSorteado = numerosDisponiveis[Math.floor(Math.random() * numerosDisponiveis.length)];
 
-        // Virar todas as cartas para efeito visual
         const todasCartas = document.querySelectorAll('.uno-card');
         todasCartas.forEach(carta => {
             carta.classList.remove('back');
@@ -688,7 +732,6 @@
 
         elemento.innerText = numeroSorteado;
         
-        // Preencher as outras cartas com os números restantes aleatoriamente
         let restantes = [0, 1, 2, 3].filter(n => n !== numeroSorteado);
         todasCartas.forEach(carta => {
             if (carta !== elemento) {
@@ -700,6 +743,7 @@
 
         ajudaCartasUsada = true;
         document.getElementById('btn-cards').disabled = true;
+        verificarAjudasEsgotadas();
 
         setTimeout(() => {
             document.getElementById('cards-modal').style.display = 'none';
@@ -723,13 +767,15 @@
 
     /* --- LÓGICA DA AJUDA: PULAR PERGUNTA --- */
     function usarPular() {
-        if (bloqueado || ajudaPularUsada) return;
+        if (ajudaPularUsada) return;
         
         ajudaPularUsada = true;
         document.getElementById('btn-skip').disabled = true;
+        verificarAjudasEsgotadas();
 
-        // Troca para a próxima pergunta da lista sem alterar o premioAcumulado
-        perguntaAtualIndex++;
+        fecharModalAjudas();
+
+        // Traz uma nova pergunta MANTENDO o mesmo nível e prêmio em disputa
         exibirPergunta();
     }
 
