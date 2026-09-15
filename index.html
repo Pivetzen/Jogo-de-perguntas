@@ -134,11 +134,37 @@
             font-size: 0.9rem;
             transition: 0.2s;
             font-weight: 600;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-lifeline:hover:not(:disabled) {
             background: #3c26a6;
             border-color: #ffd700;
+        }
+
+        /* ESTILO BOTÃO DE AJUDA USADO (CORTADO COM X) */
+        .btn-lifeline:disabled {
+            background: #120a2e;
+            border-color: #332255;
+            color: #666;
+            cursor: not-allowed;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .btn-lifeline:disabled::after {
+            content: "✕";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            color: #ff3366;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 0 5px rgba(255, 51, 102, 0.8);
+            pointer-events: none;
         }
 
         /* PAINEL DE VALORES (ACERTAR, PARAR, ERRAR) */
@@ -363,10 +389,10 @@
         <div class="header-game">
             <div class="timer-box">Tempo: <span id="timer">30</span>s</div>
             <div class="lifelines">
-                <button class="btn-lifeline" id="btn-cards" onclick="abrirModalCartas()">Cartas UNO</button>
-                <button class="btn-lifeline" id="btn-skip" onclick="usarPular()">Pular</button>
+                <button class="btn-lifeline" id="btn-cards" onclick="abrirModalCartas()">Eliminar erradas</button>
+                <button class="btn-lifeline" id="btn-skip" onclick="usarPular()">Pular pergunta</button>
             </div>
-            <button class="btn btn-stop" style="padding: 8px 18px; font-size: 0.9rem;" onclick="pararJogo()">Parar</button>
+            <button class="btn btn-stop" style="padding: 8px 18px; font-size: 0.9rem;" onclick="pararJogo()">PARAR</button>
         </div>
 
         <!-- PAINEL DE VALORES DA RODADA -->
@@ -629,7 +655,7 @@
         }
     }
 
-    /* --- LÓGICA DA AJUDA: CARTAS UNO --- */
+    /* --- LÓGICA DA AJUDA: ELIMINAR ERRADAS --- */
     function abrirModalCartas() {
         if (bloqueado || ajudaCartasUsada) return;
         
@@ -695,7 +721,7 @@
         });
     }
 
-    /* --- LÓGICA DA AJUDA: PULAR --- */
+    /* --- LÓGICA DA AJUDA: PULAR PERGUNTA --- */
     function usarPular() {
         if (bloqueado || ajudaPularUsada) return;
         
