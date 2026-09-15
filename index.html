@@ -54,6 +54,40 @@
             margin-bottom: 10px;
         }
 
+        /* ESTILO PARA A SELEÇÃO DE TEMAS */
+        .theme-select-container {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .theme-select-container label {
+            font-size: 1rem;
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .theme-select {
+            background: #0d0726;
+            color: #ffffff;
+            border: 2px solid #4a38a6;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-select:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
         .btn {
             background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
             color: #000;
@@ -403,6 +437,15 @@
     <div id="setup-screen" class="setup-screen">
         <h1>QUEM QUER SER UM MILIONÁRIO?</h1>
         <p class="loading-text" id="status-msg">Carregando as perguntas do jogo...</p>
+        
+        <!-- SELEÇÃO DE TEMA -->
+        <div class="theme-select-container" id="theme-container">
+            <label for="theme-select">Escolha o Tema do Jogo:</label>
+            <select id="theme-select" class="theme-select">
+                <option value="GERAL">GERAL (Todos os temas)</option>
+            </select>
+        </div>
+
         <button class="btn" id="btn-start" style="display: none;" onclick="comecarJogoDirectamente()">Iniciar Jogo</button>
         <p id="error-msg" style="color: #ff3366; font-size: 0.9rem; margin-top: 10px;"></p>
     </div>
@@ -465,8 +508,9 @@
         1000000
     ];
 
+    let todasPerguntas = [];
     let perguntas = [];
-    let nivelAtual = 0; // Controla qual nível do prêmio o jogador está disputando
+    let nivelAtual = 0;
     let indiceRespostaCorreta = -1;
     let tempoRestante = 30;
     let timerInterval = null;
@@ -491,21 +535,46 @@
         const errorMsg = document.getElementById('error-msg');
         const statusMsg = document.getElementById('status-msg');
         const btnStart = document.getElementById('btn-start');
+        const themeContainer = document.getElementById('theme-container');
 
         try {
-            perguntas = await carregarPerguntasPlanilha(SHEET_ID);
+            todasPerguntas = await carregarPerguntasPlanilha(SHEET_ID);
             
-            if (perguntas.length === 0) {
+            if (todasPerguntas.length === 0) {
                 throw new Error("Nenhuma pergunta foi encontrada na planilha.");
             }
 
+            preencherSelectTemas(todasPerguntas);
+
             statusMsg.innerText = "Pronto para jogar!";
+            themeContainer.style.display = 'flex';
             btnStart.style.display = 'inline-block';
         } catch (err) {
             statusMsg.style.display = 'none';
             errorMsg.innerText = "Erro ao carregar as perguntas. Certifique-se de que publicou a planilha na Web (Arquivo > Compartilhar > Publicar na Web).";
             console.error(err);
         }
+    }
+
+    function preencherSelectTemas(lista) {
+        const select = document.getElementById('theme-select');
+        select.innerHTML = '<option value="GERAL">GERAL (Todos os temas)</option>';
+
+        // Extrai todos os temas únicos existentes na planilha
+        const temasUnicos = new Set();
+        lista.forEach(p => {
+            if (p.tema && p.tema.trim() !== '' && p.tema.toUpperCase() !== 'GERAL') {
+                temasUnicos.add(p.tema.trim());
+            }
+        });
+
+        // Adiciona cada tema único como uma opção no select
+        temasUnicos.forEach(tema => {
+            const opt = document.createElement('option');
+            opt.value = tema;
+            opt.innerText = tema;
+            select.appendChild(opt);
+        });
     }
 
     async function carregarPerguntasPlanilha(sheetId) {
@@ -525,9 +594,10 @@
         const idxErrada1 = header.indexOf('errada1');
         const idxErrada2 = header.indexOf('errada2');
         const idxErrada3 = header.indexOf('errada3');
+        const idxTema = header.indexOf('tema');
 
         if (idxPergunta === -1 || idxCorreta === -1 || idxErrada1 === -1 || idxErrada2 === -1 || idxErrada3 === -1) {
-            throw new Error("Colunas não encontradas. O cabeçalho deve conter exatamente: pergunta, correta, errada1, errada2, errada3.");
+            throw new Error("Colunas obrigatórias não encontradas. O cabeçalho deve conter: pergunta, correta, errada1, errada2, errada3.");
         }
 
         const listaPerguntas = [];
@@ -537,7 +607,8 @@
                 listaPerguntas.push({
                     pergunta: row[idxPergunta],
                     correta: row[idxCorreta],
-                    erradas: [row[idxErrada1], row[idxErrada2], row[idxErrada3]]
+                    erradas: [row[idxErrada1], row[idxErrada2], row[idxErrada3]],
+                    tema: (idxTema !== -1 && row[idxTema]) ? row[idxTema].trim() : 'Geral'
                 });
             }
         }
@@ -579,6 +650,20 @@
     }
 
     function comecarJogoDirectamente() {
+        const temaSelecionado = document.getElementById('theme-select').value;
+
+        // Filtrar perguntas conforme a escolha
+        if (temaSelecionado === "GERAL") {
+            perguntas = [...todasPerguntas];
+        } else {
+            perguntas = todasPerguntas.filter(p => p.tema.toLowerCase() === temaSelecionado.toLowerCase());
+        }
+
+        if (perguntas.length === 0) {
+            alert(`Não existem perguntas cadastradas para o tema: ${temaSelecionado}`);
+            return;
+        }
+
         perguntas.sort(() => Math.random() - 0.5);
 
         document.getElementById('setup-screen').style.display = 'none';
@@ -606,7 +691,7 @@
         }
 
         if (perguntas.length === 0) {
-            finalizarJogo(false, "Sem mais perguntas no banco de dados!");
+            finalizarJogo(false, "Sem mais perguntas no banco de dados para este tema!");
             return;
         }
 
