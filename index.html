@@ -35,6 +35,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            position: relative;
         }
 
         /* TELA DE CARREGAMENTO / INÍCIO */
@@ -72,12 +73,22 @@
             box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
         }
 
+        .btn-stop {
+            background: linear-gradient(135deg, #ff3366 0%, #a1002b 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+        }
+
+        .btn-stop:hover {
+            box-shadow: 0 6px 20px rgba(255, 51, 102, 0.6);
+        }
+
         .btn:disabled {
-            background: #555;
-            color: #888;
+            background: #555 !important;
+            color: #888 !important;
             cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
+            box-shadow: none !important;
+            transform: none !important;
         }
 
         /* TELA DO JOGO */
@@ -95,12 +106,6 @@
             padding: 15px 20px;
             border-radius: 12px;
             border: 1px solid #322380;
-        }
-
-        .prize-box {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #00ffcc;
         }
 
         .timer-box {
@@ -128,12 +133,53 @@
             cursor: pointer;
             font-size: 0.9rem;
             transition: 0.2s;
+            font-weight: 600;
         }
 
         .btn-lifeline:hover:not(:disabled) {
             background: #3c26a6;
             border-color: #ffd700;
         }
+
+        /* PAINEL DE VALORES (ACERTAR, PARAR, ERRAR) */
+        .prizes-dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .prize-card {
+            background: #0d0726;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #322380;
+        }
+
+        .prize-card .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .prize-card .val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-top: 4px;
+        }
+
+        .prize-card.correct { border-color: #00ff68; }
+        .prize-card.correct .label { color: #00ff68; }
+        .prize-card.correct .val { color: #00ff68; }
+
+        .prize-card.stop { border-color: #ffd700; }
+        .prize-card.stop .label { color: #ffd700; }
+        .prize-card.stop .val { color: #ffd700; }
+
+        .prize-card.wrong { border-color: #ff3366; }
+        .prize-card.wrong .label { color: #ff3366; }
+        .prize-card.wrong .val { color: #ff3366; }
 
         /* ESTRUTURA DA PERGUNTA */
         .question-box {
@@ -165,6 +211,9 @@
             .header-game {
                 flex-direction: column;
                 gap: 10px;
+            }
+            .prizes-dashboard {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -222,11 +271,85 @@
             color: #ffd700;
             margin-top: 10px;
         }
+
+        /* MODAL DAS CARTAS UNO */
+        .modal-cards {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(8, 4, 26, 0.95);
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .modal-cards h2 {
+            color: #ffd700;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .cards-grid {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .uno-card {
+            width: 90px;
+            height: 130px;
+            background: linear-gradient(135deg, #e63946 0%, #b7094c 100%);
+            border: 3px solid #ffffff;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, background 0.3s ease;
+            user-select: none;
+        }
+
+        .uno-card:hover:not(.revealed) {
+            transform: translateY(-10px) scale(1.05);
+        }
+
+        .uno-card.back {
+            background: radial-gradient(circle, #ff0055 0%, #5a002c 100%);
+            color: #ffd700;
+        }
+
+        .uno-card.revealed {
+            background: #ffffff;
+            color: #0d0726;
+            border-color: #ffd700;
+            cursor: default;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- MODAL CARTAS DE UNO -->
+    <div id="cards-modal" class="modal-cards">
+        <h2>Escolha uma carta para eliminar respostas erradas:</h2>
+        <div class="cards-grid" id="cards-container">
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+        </div>
+        <p id="cards-msg" style="color: #00ffcc; font-size: 1.1rem; height: 30px;"></p>
+    </div>
+
     <!-- TELA INICIAL / CARREGAMENTO -->
     <div id="setup-screen" class="setup-screen">
         <h1>QUEM QUER SER UM MILIONÁRIO?</h1>
@@ -238,10 +361,27 @@
     <!-- TELA DO JOGO -->
     <div id="game-screen" class="game-screen">
         <div class="header-game">
-            <div class="prize-box">Prêmio: <span id="current-prize">R$ 0</span></div>
             <div class="timer-box">Tempo: <span id="timer">30</span>s</div>
             <div class="lifelines">
-                <button class="btn-lifeline" id="btn-5050" onclick="usar5050()">Eliminar 2 (50:50)</button>
+                <button class="btn-lifeline" id="btn-cards" onclick="abrirModalCartas()">Cartas UNO</button>
+                <button class="btn-lifeline" id="btn-skip" onclick="usarPular()">Pular</button>
+            </div>
+            <button class="btn btn-stop" style="padding: 8px 18px; font-size: 0.9rem;" onclick="pararJogo()">Parar</button>
+        </div>
+
+        <!-- PAINEL DE VALORES DA RODADA -->
+        <div class="prizes-dashboard">
+            <div class="prize-card wrong">
+                <div class="label">Se Errar</div>
+                <div class="val" id="val-errar">R$ 0</div>
+            </div>
+            <div class="prize-card stop">
+                <div class="label">Se Parar</div>
+                <div class="val" id="val-parar">R$ 0</div>
+            </div>
+            <div class="prize-card correct">
+                <div class="label">Se Acertar</div>
+                <div class="val" id="val-acertar">R$ 1.000</div>
             </div>
         </div>
 
@@ -270,11 +410,11 @@
     // ID da sua planilha já pré-definido
     const SHEET_ID = '1tvhiX8xjqUZoLGyZN3Uf-bTUPCRvHTY7Hzk-ZHn3avU';
 
-    // Escala de Prêmios Estilo Milionário
-    const tabelaPremios = [
-        "R$ 1.000", "R$ 2.000", "R$ 3.000", "R$ 5.000", "R$ 10.000",
-        "R$ 20.000", "R$ 50.000", "R$ 100.000", "R$ 300.000", "R$ 500.000",
-        "R$ 1.000.000"
+    // Escala de Prêmios Numéricos (para cálculos de porcentagem)
+    const premiosValores = [
+        1000, 2000, 3000, 5000, 10000,
+        20000, 50000, 100000, 300000, 500000,
+        1000000
     ];
 
     let perguntas = [];
@@ -283,8 +423,18 @@
     let tempoRestante = 30;
     let timerInterval = null;
     let bloqueado = false;
+    let valorAcumuladoAtual = 0;
 
-    // Assim que a página abre, baixa automaticamente as perguntas da sua planilha
+    // Controle de ajudas
+    let ajudaCartasUsada = false;
+    let ajudaPularUsada = false;
+
+    // Formatar número para moeda R$
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+    }
+
+    // Carregamento Inicial
     window.addEventListener('DOMContentLoaded', () => {
         carregarPerguntasAutomaticamente();
     });
@@ -381,14 +531,19 @@
     }
 
     function comecarJogoDirectamente() {
-        // Embaralha a ordem das perguntas para cada partida
         perguntas.sort(() => Math.random() - 0.5);
 
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'flex';
         
         perguntaAtualIndex = 0;
-        document.getElementById('btn-5050').disabled = false;
+        valorAcumuladoAtual = 0;
+        ajudaCartasUsada = false;
+        ajudaPularUsada = false;
+
+        document.getElementById('btn-cards').disabled = false;
+        document.getElementById('btn-skip').disabled = false;
+
         exibirPergunta();
     }
 
@@ -396,16 +551,22 @@
         bloqueado = false;
         resetarBotoes();
 
-        if (perguntaAtualIndex >= perguntas.length || perguntaAtualIndex >= tabelaPremios.length) {
+        if (perguntaAtualIndex >= perguntas.length || perguntaAtualIndex >= premiosValores.length) {
             finalizarJogo(true);
             return;
         }
 
+        // Atualizar Dashboard de Prêmios
+        const valorAcertar = premiosValores[perguntaAtualIndex];
+        const valorParar = valorAcumuladoAtual * 0.5; // Perde 50%
+        const valorErrar = valorAcumuladoAtual * 0.2; // Perde 80% (fica com 20%)
+
+        document.getElementById('val-acertar').innerText = formatarMoeda(valorAcertar);
+        document.getElementById('val-parar').innerText = formatarMoeda(valorParar);
+        document.getElementById('val-errar').innerText = formatarMoeda(valorErrar);
+
         const q = perguntas[perguntaAtualIndex];
         document.getElementById('question-text').innerText = q.pergunta;
-
-        const premioAtual = tabelaPremios[perguntaAtualIndex];
-        document.getElementById('current-prize').innerText = premioAtual;
 
         const todasOpcoes = [
             { texto: q.correta, eCorreta: true },
@@ -414,7 +575,6 @@
             { texto: q.erradas[2], eCorreta: false }
         ];
 
-        // Embaralha as alternativas (A, B, C, D)
         todasOpcoes.sort(() => Math.random() - 0.5);
 
         const btns = document.querySelectorAll('.btn-answer');
@@ -455,6 +615,7 @@
 
         if (eCorreta) {
             btnSelecionado.classList.add('correct');
+            valorAcumuladoAtual = premiosValores[perguntaAtualIndex];
             setTimeout(() => {
                 perguntaAtualIndex++;
                 exibirPergunta();
@@ -468,19 +629,88 @@
         }
     }
 
-    function usar5050() {
-        if (bloqueado) return;
+    /* --- LÓGICA DA AJUDA: CARTAS UNO --- */
+    function abrirModalCartas() {
+        if (bloqueado || ajudaCartasUsada) return;
+        
+        // Resetar modal de cartas
+        const container = document.getElementById('cards-container');
+        container.innerHTML = `
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+            <div class="uno-card back" onclick="virarCarta(this)">UNO</div>
+        `;
+        document.getElementById('cards-msg').innerText = "";
+        document.getElementById('cards-modal').style.display = 'flex';
+    }
+
+    function virarCarta(elemento) {
+        if (elemento.classList.contains('revealed')) return;
+
+        // Sorteia número de 0 a 3
+        const numerosDisponiveis = [0, 1, 2, 3];
+        const numeroSorteado = numerosDisponiveis[Math.floor(Math.random() * numerosDisponiveis.length)];
+
+        // Virar todas as cartas para efeito visual
+        const todasCartas = document.querySelectorAll('.uno-card');
+        todasCartas.forEach(carta => {
+            carta.classList.remove('back');
+            carta.classList.add('revealed');
+            carta.onclick = null;
+        });
+
+        elemento.innerText = numeroSorteado;
+        
+        // Preencher as outras cartas com os números restantes aleatoriamente
+        let restantes = [0, 1, 2, 3].filter(n => n !== numeroSorteado);
+        todasCartas.forEach(carta => {
+            if (carta !== elemento) {
+                carta.innerText = restantes.pop();
+            }
+        });
+
+        document.getElementById('cards-msg').innerText = `Você eliminou ${numeroSorteado} resposta(s) errada(s)!`;
+
+        ajudaCartasUsada = true;
+        document.getElementById('btn-cards').disabled = true;
+
+        setTimeout(() => {
+            document.getElementById('cards-modal').style.display = 'none';
+            aplicarEliminacaoCartas(numeroSorteado);
+        }, 2000);
+    }
+
+    function aplicarEliminacaoCartas(qtd) {
+        if (qtd <= 0) return;
+
         const btns = document.querySelectorAll('.btn-answer');
         let eliminados = 0;
 
         btns.forEach((btn, idx) => {
-            if (idx !== indiceRespostaCorreta && eliminados < 2 && !btn.classList.contains('hidden')) {
+            if (idx !== indiceRespostaCorreta && eliminados < qtd && !btn.classList.contains('hidden')) {
                 btn.classList.add('hidden');
                 eliminados++;
             }
         });
+    }
 
-        document.getElementById('btn-5050').disabled = true;
+    /* --- LÓGICA DA AJUDA: PULAR --- */
+    function usarPular() {
+        if (bloqueado || ajudaPularUsada) return;
+        
+        ajudaPularUsada = true;
+        document.getElementById('btn-skip').disabled = true;
+
+        // Troca para a próxima pergunta da lista sem alterar o premioAcumulado
+        perguntaAtualIndex++;
+        exibirPergunta();
+    }
+
+    /* --- LÓGICA DE PARAR --- */
+    function pararJogo() {
+        if (bloqueado) return;
+        finalizarJogo(false, "Você escolheu parar!", true);
     }
 
     function resetarBotoes() {
@@ -490,7 +720,7 @@
         });
     }
 
-    function finalizarJogo(vitoria, mensagem = "") {
+    function finalizarJogo(vitoria, mensagem = "", parou = false) {
         clearInterval(timerInterval);
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('game-over-screen').style.display = 'flex';
@@ -502,12 +732,17 @@
         if (vitoria) {
             titulo.innerText = "PARABÉNS! VOCÊ É UM MILIONÁRIO!";
             msg.innerText = "Você acertou todas as perguntas e ganhou:";
-            premioFinal.innerText = "R$ 1.000.000";
+            premioFinal.innerText = formatarMoeda(1000000);
+        } else if (parou) {
+            titulo.innerText = "VOCÊ PAROU!";
+            msg.innerText = "Você garantiu 50% do valor acumulado:";
+            const valorFinal = valorAcumuladoAtual * 0.5;
+            premioFinal.innerText = formatarMoeda(valorFinal);
         } else {
             titulo.innerText = "FIM DE JOGO!";
-            msg.innerText = mensagem;
-            const premioGanho = perguntaAtualIndex > 0 ? tabelaPremios[perguntaAtualIndex - 1] : "R$ 0";
-            premioFinal.innerText = premioGanho;
+            msg.innerText = mensagem + " Você ficou com 20% do valor acumulado:";
+            const valorFinal = valorAcumuladoAtual * 0.2; // Perde 80%
+            premioFinal.innerText = formatarMoeda(valorFinal);
         }
     }
 
